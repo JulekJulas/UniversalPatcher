@@ -29,7 +29,7 @@ namespace UniversalPatcher
 
     public class UniversalPatchConstantDef : Def
     {// we can just use the defName for the name
-        public double value;
+        public float value;
     }
 
 
@@ -37,7 +37,7 @@ namespace UniversalPatcher
     public static class UniversalPatcher
     {
 
-        public static Dictionary<string, double> UniversalPatchConstants = new Dictionary<string, double>();
+        public static Dictionary<string, float> UniversalPatchConstants = new Dictionary<string, float>();
         public static Dictionary<string, string> ErrorList = new Dictionary<string, string>();
         public static string[] validFirstComponents = { "delta", "result", "string" };
         public static char[] validFirstComponentsChars = { 'i', 'f', 'd', 'l', 's' };
@@ -51,23 +51,33 @@ namespace UniversalPatcher
                 UniversalPatchConstants.Add(def.defName, def.value);
             }
 
-            string[] variable = { "v", "variable", "Variable", "V", "VARIABLE" }; string[] delta = { "d", "D", "delta", "DELTA", "Delta" }; string[] result = { "r", "R", "result", "RESULT", "Result" }; string[] strings = { "s", "S", "string", "STRING", "String" };
-
             foreach (UniversalPatchDef def in DefDatabase<UniversalPatchDef>.AllDefsListForReading)
             {
+                string currentType = def.type.ToLower();
                 if (DefCheck(def) == false) continue;
-                if (variable.Contains(def.type)) VariablePatcher(def);
-                else if (delta.Contains(def.type)) DeltaPatcher(def);
-                else if (result.Contains(def.type)) ResultPatcher(def);
-                else if (strings.Contains(def.type)) StringPatcher(def);
-                else Log.Error($"(UniversalPatcher) Def '{def.defName}' has an invalid type '{def.type}'; skipping.");
+                switch (currentType)
+                {
+                    case "variable": VariablePatcher(def); break;
+                    case "delta": DeltaPatcher(def); break;
+                    case "result": ResultPatcher(def); break;
+                    case "string": StringPatcher(def); break;
+                    default: ErrorList.Add(def.defName.Split('.')[0], $"6.{def.typeOf}-{def.name}"); continue;
+                }
             }
         }
         static void VariablePatcher(UniversalPatchDef def)
-        {
+        { // 60000f.mul.5
+            foreach (var input in def.input)
+            {
+                float currentValue = 0f;
+                string[] parts = input.Split('.');
+                if (float.TryParse(parts[2], out float value)) currentValue = value;
+                else if (UniversalPatchConstants.TryGetValue(parts[2], out float constValue)) currentValue = constValue;
+                else { ErrorList.Add(def.defName.Split('.')[0], $"7.{def.typeOf}-{def.name}"); continue; }
 
+
+            }
         }
-
         static void DeltaPatcher(UniversalPatchDef def)
         {
 
@@ -90,23 +100,6 @@ namespace UniversalPatcher
             if (def.name == null) { ErrorList.Add(names[0], $"3.{def.typeOf}-{def.name}"); return false; }
             if (def.type == null) { ErrorList.Add(names[0], $"4.{def.typeOf}-{def.name}"); return false; }
             if (def.input == null || def.input.Count() == 0) { ErrorList.Add(names[0], $"5.{def.typeOf}-{def.name}"); return false; }
-
-            foreach (string input in def.input)
-            {
-                string[] inputParts = input.Split('.');
-                if (inputParts.Length < 3) { ErrorList.Add(names[0], $"6.{def.typeOf}-{def.name}"); return false; }
-                if (validFirstComponents.Contains(inputParts[0]))
-                {
-
-                }
-                else if (validFirstComponentsChars.Contains(inputParts[0].Last()) || char.IsDigit(inputParts[0].Last())) // for ints
-                {
-
-                }
-                else { return false; }
-                if (!validSecondComponents.Contains(inputParts[1])) { return false; }
-                
-            }
             return true;
         }
 
