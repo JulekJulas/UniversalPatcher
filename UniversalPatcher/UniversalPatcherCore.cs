@@ -36,8 +36,12 @@ namespace UniversalPatcher
     [StaticConstructorOnStartup]
     public static class UniversalPatcher
     {
+
         public static Dictionary<string, double> UniversalPatchConstants = new Dictionary<string, double>();
-        public static Dictionary<string, string[]> ErrorList = new Dictionary<string, string[]>();
+        public static Dictionary<string, string> ErrorList = new Dictionary<string, string>();
+        public static string[] validFirstComponents = { "delta", "result", "string" };
+        public static char[] validFirstComponentsChars = { 'i', 'f', 'd', 'l', 's' };
+        public static string[] validSecondComponents = { "mul", "div", "set", "pow", "sqr" };
         static UniversalPatcher()
         {
             foreach (UniversalPatchConstantDef def in DefDatabase<UniversalPatchConstantDef>.AllDefsListForReading)
@@ -77,16 +81,32 @@ namespace UniversalPatcher
         {
 
         }
-
         public static bool DefCheck(UniversalPatchDef def)
         { // i might duplicate some code but i will have all checks already done
             string[] names = def.defName.Split('.');
-            if (names.Length != 2 || string.IsNullOrWhiteSpace(names[0]) || string.IsNullOrWhiteSpace(names[1])) { Log.Error($"(UniversalPatcher) {def.defName} does not contain a Mod name or is incorrectly formatted; skipping."); return false; }
-            if (def.namespaceOf == null) { Log.Error($"(UniversalPatcher) namespaceOf in {def.defName} is not filled in; skipping."); return false; }
-            if (def.typeOf == null) { Log.Error($"(UniversalPatcher) typeOf in {def.defName} is not filled in; skipping."); return false; }
-            if (def.name == null) { Log.Error($"(UniversalPatcher) name in {def.defName} is not filled in; skipping."); return false; }
-            if (def.type == null) { Log.Error($"(UniversalPatcher) type in {def.defName} is not filled in; skipping."); return false; }
-            if (def.input == null) { Log.Error($"(UniversalPatcher) input in {def.defName} is not filled in; skipping."); return false; }
+            if (names.Length != 2 || string.IsNullOrWhiteSpace(names[0]) || string.IsNullOrWhiteSpace(names[1])) { Log.Error($"(UniversalPatcher) {def.defName} is not properly formatted; skipping"); return false; }  // TODO think up codes for these errors
+            if (def.namespaceOf == null) { ErrorList.Add(names[0], $"1.{def.typeOf}-{def.name}"); return false; }
+            if (def.typeOf == null) { ErrorList.Add(names[0], $"2.{def.typeOf}-{def.name}"); return false; }
+            if (def.name == null) { ErrorList.Add(names[0], $"3.{def.typeOf}-{def.name}"); return false; }
+            if (def.type == null) { ErrorList.Add(names[0], $"4.{def.typeOf}-{def.name}"); return false; }
+            if (def.input == null || def.input.Count() == 0) { ErrorList.Add(names[0], $"5.{def.typeOf}-{def.name}"); return false; }
+
+            foreach (string input in def.input)
+            {
+                string[] inputParts = input.Split('.');
+                if (inputParts.Length < 3) { ErrorList.Add(names[0], $"6.{def.typeOf}-{def.name}"); return false; }
+                if (validFirstComponents.Contains(inputParts[0]))
+                {
+
+                }
+                else if (validFirstComponentsChars.Contains(inputParts[0].Last()) || char.IsDigit(inputParts[0].Last())) // for ints
+                {
+
+                }
+                else { return false; }
+                if (!validSecondComponents.Contains(inputParts[1])) { return false; }
+                
+            }
             return true;
         }
 
