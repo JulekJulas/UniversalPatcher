@@ -19,18 +19,16 @@ namespace UniversalPatcher
 
     public class UniversalPatchDef : Def
     {
+        public string newVariable;
+        //general
         public string namespaceOf;
         public string typeOf;
         public string name;
         public string type;
-        public List<string> properties; // very much TODO
+        public int propertiesLength;
         public List<string> input;
     }
 
-    public class UniversalPatchConstantDef : Def
-    {// we can just use the defName for the name
-        public float value;
-    }
 
 
     [StaticConstructorOnStartup]
@@ -44,13 +42,6 @@ namespace UniversalPatcher
         public static string[] validSecondComponents = { "mul", "div", "set", "pow", "sqr" };
         static UniversalPatcher()
         {
-            foreach (UniversalPatchConstantDef def in DefDatabase<UniversalPatchConstantDef>.AllDefsListForReading)
-            { // TODO make proper log system
-                if (def.defName == null) { Log.Error($"(UniversalPatcher) Constant Def '{def.defName}' has no name; skipping."); continue; }
-                // originally i had a == 0d check but honestly it can just be 0 so it just multiplies everything by 0 which is valid
-                UniversalPatchConstants.Add(def.defName, def.value);
-            }
-
             foreach (UniversalPatchDef def in DefDatabase<UniversalPatchDef>.AllDefsListForReading)
             {
                 string currentType = def.type.ToLower();
